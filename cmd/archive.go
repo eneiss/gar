@@ -4,26 +4,11 @@ Copyright © 2026 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
-
-	"github.com/spf13/cobra"
+	"github.com/eneiss/gar/internal/cli/archive"
 )
 
-// archiveCmd represents the archive command
-var archiveCmd = &cobra.Command{
-	Use:   "archive",
-	Short: "Create an archive",
-	Long: `Create a tar or compressed archive of the provided target path.
-For example:
-	TODO
-`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("archive called")
-	},
-}
-
 func init() {
-	rootCmd.AddCommand(archiveCmd)
+	rootCmd.AddCommand(archive.NewCommand())
 
 	// Here you will define your flags and configuration settings.
 
