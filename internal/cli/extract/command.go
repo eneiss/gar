@@ -3,6 +3,7 @@ package extract
 import (
 	"fmt"
 
+	"github.com/eneiss/gar/internal/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -17,7 +18,7 @@ func NewCommand() *cobra.Command {
 For example:
 		TODO
 `,
-		Run: extractRun,
+		RunE: extractRun,
 	}
 
 	cmd.Flags().StringVarP(&Output, "output", "o", "", "Output path where the archive will be extracted")
@@ -26,10 +27,16 @@ For example:
 	return cmd
 }
 
-func extractRun(cmd *cobra.Command, args []string) {
+func extractRun(cmd *cobra.Command, args []string) error {
 	fmt.Println("extract called")
 
 	for _, arg := range args {
 		fmt.Println(arg)
 	}
+
+	// Check if all provided arguments are existing files
+	if err := utils.FilesExist(args); err != nil {
+		return err
+	}
+	return nil
 }
