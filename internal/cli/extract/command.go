@@ -6,10 +6,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var Output string
+
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "extract",
 		Short: "Extract an archive",
+		Args:  cobra.MinimumNArgs(1),
 		Long: `Extract the target archive.
 For example:
 		TODO
@@ -17,7 +20,8 @@ For example:
 		Run: extractRun,
 	}
 
-	cmd.Flags().Bool("gzip", false, "Uncompress the archive with gzip")
+	cmd.Flags().StringVarP(&Output, "output", "o", "", "Output path where the archive will be extracted")
+	cmd.Flags().BoolP("gzip", "z", false, "Uncompress the archive with gzip")
 
 	return cmd
 }

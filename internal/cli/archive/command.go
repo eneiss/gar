@@ -6,10 +6,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var Output string
+
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "archive",
 		Short: "Create an archive",
+		Args:  cobra.MinimumNArgs(1),
 		Long: `Create a tar or compressed archive of the provided target path.
 For example:
 	TODO
@@ -17,7 +20,8 @@ For example:
 		Run: archiveRun,
 	}
 
-	cmd.Flags().Bool("gzip", false, "Compress the archive with gzip")
+	cmd.Flags().StringVarP(&Output, "output", "o", "", "Output path where the archive will be written")
+	cmd.Flags().BoolP("gzip", "z", false, "Compress the archive with gzip")
 
 	return cmd
 }
