@@ -8,6 +8,7 @@ import (
 )
 
 var Output string
+var BlockingFactor int
 
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -23,6 +24,7 @@ For example:
 
 	cmd.Flags().StringVarP(&Output, "output", "o", "", "Output path where the archive will be written")
 	cmd.Flags().BoolP("gzip", "z", false, "Compress the archive with gzip")
+	cmd.Flags().IntVarP(&BlockingFactor, "blocking-factor", "b", 20, "Set record size as a multiple of 512 bytes")
 
 	return cmd
 }
@@ -36,7 +38,6 @@ func archiveRun(cmd *cobra.Command, args []string) error {
 
 	// Check if all provided arguments are existing files
 	if err := utils.FilesExist(args); err != nil {
-		// fmt.Printf("Error: %v\n", err)
 		return err
 	}
 	return nil

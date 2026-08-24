@@ -1,8 +1,10 @@
 package extract
 
 import (
-	"fmt"
+	// "fmt"
+	"os"
 
+	"github.com/eneiss/gar/internal/tar"
 	"github.com/eneiss/gar/internal/utils"
 	"github.com/spf13/cobra"
 )
@@ -13,7 +15,7 @@ func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "extract",
 		Short: "Extract an archive",
-		Args:  cobra.MinimumNArgs(1),
+		Args:  cobra.ExactArgs(1),
 		Long: `Extract the target archive.
 For example:
 		TODO
@@ -28,15 +30,24 @@ For example:
 }
 
 func extractRun(cmd *cobra.Command, args []string) error {
-	fmt.Println("extract called")
+	file_path := args[0] // already validated by cobra
 
-	for _, arg := range args {
-		fmt.Println(arg)
-	}
-
-	// Check if all provided arguments are existing files
-	if err := utils.FilesExist(args); err != nil {
+	// Check if file at provided path exists
+	if err := utils.FileExists(file_path); err != nil {
 		return err
 	}
+
+	file, err := os.ReadFile(file_path)
+	if err != nil {
+		return err
+	}
+
+	header, err := tar.BuildHeader(file)
+	if err != nil {
+		return err
+	}
+
+	header.Print()
+
 	return nil
 }
