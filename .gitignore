@@ -1,1 +1,3 @@
 gar
+# gitignore tests folder for now (contains text & archive files)
+tests/**
