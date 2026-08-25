@@ -1,7 +1,6 @@
 package extract
 
 import (
-	"bytes"
 	"fmt"
 	"math"
 	"os"
@@ -44,43 +43,53 @@ func extractRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// TODO: check if file length is a multiple of 512, return otherwise
 	archive_len_bytes := len(file)
+	// check that archive length is a multiple of 512
 	if archive_len_bytes%512 != 0 {
 		return fmt.Errorf("invalid archive content length: %d (must be a multiple of 512)", archive_len_bytes)
 	}
 
 	block_index_512 := 0 // index of the next 512-bytes block to process
 
-	for {
-		// Check if we reached the end of the archive with 2 'empty' blocks marking the end of the archive
-		if len(file)-block_index_512*512 == 1024 &&
-			bytes.Count(file[block_index_512*512:(block_index_512+2)*512], []byte("\x00")) == 512 {
+	for { // loop on each 'file' inside the archive
+		fmt.Printf("--- Starting iteration on block index %d\n", block_index_512)
 
+		// Check if we reached the end of the archive with 2 'empty' blocks marking the end of the archive
+		if len(file)-block_index_512*512 == 1024 {
+			// Check if all bytes are null
+			for i, b := range file[block_index_512*512 : (block_index_512+2)*512] {
+				if b != 0 {
+					return fmt.Errorf("non-zero end of archive byte at index %s, invalid file", block_index_512*512+i)
+				}
+			}
 			fmt.Printf("Found end-of-archive blocks, stopping.")
 			break
 		}
-		// TODO: break if invalid file format too or arriving at end of indices
 
 		// Retrieve header info
 		header, err := tar.BuildRawHeader(file[block_index_512*512:])
 		if err != nil {
 			return fmt.Errorf("could not build raw header: %v", err)
 		}
-		parsedHeader, err := header.Parse()
+		parsed_header, err := header.Parse()
 		if err != nil {
 			return fmt.Errorf("could not parse raw header fields: %v", err)
 		}
 
-		parsedHeader.Print()
+		parsed_header.Print()
 
 		block_index_512 += 1 // end header, start parsing body
 
 		// TODO: get body
-		body_size_blocks := int(math.Ceil(float64(parsedHeader.Size) / 512.0))
+		body_size_blocks := int(math.Ceil(float64(parsed_header.Size) / 512.0))
+
+		fmt.Printf("512-byte blocks used to store contents of %s in archive: %d\n", parsed_header.Name, body_size_blocks)
+
+		fmt.Printf("Raw body content: %s\n", file[block_index_512*512:int64(block_index_512*512)+parsed_header.Size])
 
 		// stop parsing body, go to next file/end-of-archive
 		block_index_512 += body_size_blocks
 	}
+
 	return nil
 }
