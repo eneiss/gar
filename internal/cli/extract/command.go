@@ -42,12 +42,17 @@ func extractRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	header, err := tar.BuildHeader(file)
+	header, err := tar.BuildRawHeader(file)
 	if err != nil {
 		return err
 	}
 
-	header.Print()
+	parsedHeader, err := header.Parse()
+	if err != nil {
+		return err
+	}
+
+	parsedHeader.Print()
 
 	return nil
 }

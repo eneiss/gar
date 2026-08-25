@@ -86,7 +86,7 @@ func BuildRawHeader(raw_input []byte) (*PosixHeader, error) {
 	return &header, nil
 }
 
-func (r PosixHeader) ParseRawHeader() *ParsedPosixHeader {
+func (r *PosixHeader) Parse() (*ParsedPosixHeader, error) {
 	res := ParsedPosixHeader{
 		Name:     string(r.Name[:99]),
 		Mode:     [7]byte(r.Mode[:7]),
@@ -98,77 +98,46 @@ func (r PosixHeader) ParseRawHeader() *ParsedPosixHeader {
 	// Uid
 	uid, err := utils.Base8ToBase10(r.Uid[:7])
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	res.Uid = int(uid)
 	// Gid
 	gid, err := utils.Base8ToBase10(r.Gid[:7])
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	res.Gid = int(gid)
 	// Size
 	size, err := utils.Base8ToBase10(r.Size[:11])
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	res.Size = int64(size)
 	// Mtime
 	mtime, err := utils.Base8ToBase10(r.Mtime[:11])
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	res.Mtime = int64(mtime)
 	// Chksum
 	chksum, err := utils.Base8ToBase10(r.Chksum[:6])
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	res.Chksum = int(chksum)
 
-	return &res
+	return &res, nil
 }
 
-// Prints the content of the POSIX header h in a human-friendly way
-func (h PosixHeader) Print() {
+// Prints the content of the parsed POSIX header h in a human-friendly way
+func (h ParsedPosixHeader) Print() {
 	fmt.Printf("File name: %s\n", h.Name)
-	fmt.Printf("Mode: %s\n", h.Mode[0:8])
-
-	base10Uid, err := utils.Base8ToBase10(h.Uid[:7])
-	if err != nil {
-		fmt.Printf("Error while displaying header uid: %v", err)
-		return
-	}
-	fmt.Printf("Uid: %d (ASCII: %s)\n", base10Uid, h.Uid)
-
-	base10Gid, err := utils.Base8ToBase10(h.Gid[:7])
-	if err != nil {
-		fmt.Printf("Error while displaying header gid: %v", err)
-		return
-	}
-	fmt.Printf("Gid: %d (ASCII: %s)\n", base10Gid, h.Gid)
-
-	base10Size, err := utils.Base8ToBase10(h.Size[:11])
-	if err != nil {
-		fmt.Printf("Error while displaying header size: %v", err)
-		return
-	}
-	fmt.Printf("Size: %d (ASCII: %s)\n", base10Size, h.Size)
-
-	base10Mtime, err := utils.Base8ToBase10(h.Mtime[:11])
-	if err != nil {
-		fmt.Printf("Error while displaying header mtime: %v", err)
-		return
-	}
-	fmt.Printf("Modification time: %s (ASCII: %s)\n", time.Unix(int64(base10Mtime), 0), h.Mtime)
-
-	base10Checksum, err := utils.Base8ToBase10(h.Chksum[:6]) // last 2 bytes are NUL and SP (space)
-	if err != nil {
-		fmt.Printf("Error while displaying header chksum: %v", err)
-		return
-	}
-	fmt.Printf("Checksum (base 10 result): %d (ASCII: %s)\n", base10Checksum, h.Chksum)
-
+	fmt.Printf("Mode: %s\n", h.Mode[:])
+	fmt.Printf("Uid: %d\n", h.Uid)
+	fmt.Printf("Gid: %d\n", h.Gid)
+	fmt.Printf("Size: %d\n", h.Size)
+	fmt.Printf("Modification time: %s\n", time.Unix(h.Mtime, 0))
+	fmt.Printf("Checksum (base 10 result): %d\n", h.Chksum)
 	fmt.Printf("File type: %c\n", h.Typeflag)
 }
 
