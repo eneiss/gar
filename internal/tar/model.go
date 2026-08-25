@@ -98,31 +98,31 @@ func (r *PosixHeader) Parse() (*ParsedPosixHeader, error) {
 	// Uid
 	uid, err := utils.Base8ToBase10(r.Uid[:7])
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cloud not parse octal value for header section uid: %v", err)
 	}
 	res.Uid = int(uid)
 	// Gid
 	gid, err := utils.Base8ToBase10(r.Gid[:7])
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cloud not parse octal value for header section gid: %v", err)
 	}
 	res.Gid = int(gid)
 	// Size
 	size, err := utils.Base8ToBase10(r.Size[:11])
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cloud not parse octal value for header section size: %v", err)
 	}
 	res.Size = int64(size)
 	// Mtime
 	mtime, err := utils.Base8ToBase10(r.Mtime[:11])
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cloud not parse octal value for header section mtime: %v", err)
 	}
 	res.Mtime = int64(mtime)
 	// Chksum
 	chksum, err := utils.Base8ToBase10(r.Chksum[:6])
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cloud not parse octal value for header section chksum: %v", err)
 	}
 	res.Chksum = int(chksum)
 
