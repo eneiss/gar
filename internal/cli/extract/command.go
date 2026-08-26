@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"time"
 
 	"github.com/eneiss/gar/internal/tar"
 	"github.com/eneiss/gar/internal/utils"
@@ -97,9 +98,18 @@ func extractRun(cmd *cobra.Command, args []string) error {
 		fmt.Printf("512-byte blocks used to store contents of %s in archive: %d\n", parsed_header.Name, body_size_blocks)
 		fmt.Printf("Raw body content: %s\n", body_bytes)
 
+		// TODO: test with nested archive files
+
 		// write file to system in current working directory (already chdir to target dir)
 		if err = os.WriteFile(parsed_header.Name, body_bytes, os.FileMode(parsed_header.Mode)); err != nil {
 			return fmt.Errorf("failed to extract file %s: %v", parsed_header.Name, err)
+		}
+		// set correct uid/gid
+		if err = os.Chown(parsed_header.Name, parsed_header.Uid, parsed_header.Gid); err != nil {
+			return fmt.Errorf("failed to apply uid/gid on file %s: %v", parsed_header.Name, err)
+		}
+		if err = os.Chtimes(parsed_header.Name, time.Unix(parsed_header.Mtime, 0), time.Unix(parsed_header.Mtime, 0)); err != nil {
+			return fmt.Errorf("failed to update access/modification times on file %s: %v", parsed_header.Name, err)
 		}
 
 		// stop parsing body, go to next file/end-of-archive
