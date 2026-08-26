@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math"
 	"os"
-	"path/filepath"
 
 	"github.com/eneiss/gar/internal/tar"
 	"github.com/eneiss/gar/internal/utils"
@@ -55,12 +54,6 @@ func extractRun(cmd *cobra.Command, args []string) error {
 		fmt.Printf("Extracting files in current working directory\n")
 	}
 
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	fmt.Printf("+++ CWD: %s\n", cwd)
-
 	archive_len_bytes := len(file)
 	// check that archive length is a multiple of 512
 	if archive_len_bytes%512 != 0 {
@@ -104,11 +97,8 @@ func extractRun(cmd *cobra.Command, args []string) error {
 		fmt.Printf("512-byte blocks used to store contents of %s in archive: %d\n", parsed_header.Name, body_size_blocks)
 		fmt.Printf("Raw body content: %s\n", body_bytes)
 
-		abs_path := filepath.Join(cwd, parsed_header.Name)
-
 		// write file to system in current working directory (already chdir to target dir)
-		err = os.WriteFile(abs_path, body_bytes, os.FileMode(parsed_header.Mode))
-		if err != nil {
+		if err = os.WriteFile(parsed_header.Name, body_bytes, os.FileMode(parsed_header.Mode)); err != nil {
 			return fmt.Errorf("failed to extract file %s: %v", parsed_header.Name, err)
 		}
 

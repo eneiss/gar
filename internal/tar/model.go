@@ -5,6 +5,7 @@ package tar
 // [2]: https://mort.coffee/home/tar/
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/eneiss/gar/internal/utils"
 	"time"
@@ -88,9 +89,12 @@ func BuildRawHeader(raw_input []byte) (*PosixHeader, error) {
 
 func (r *PosixHeader) Parse() (*ParsedPosixHeader, error) {
 	res := ParsedPosixHeader{
-		Name:     string(r.Name[:99]),
+		// NOTE: os.WriteFile behaves strangely when null bytes are present in the
+		// target file name, so we trim them
+		// https://github.com/golang/go/issues/24195
+		Name:     string(bytes.Trim(r.Name[:99], "\x00")),
 		Typeflag: typeFlag(r.Typeflag),
-		Linkname: string(r.Linkname[:99]),
+		Linkname: string(bytes.Trim(r.Linkname[:99], "\x00")),
 		Padding:  r.Padding,
 	}
 	// Processed fields (octal base conversion)
