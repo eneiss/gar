@@ -53,7 +53,7 @@ type PosixHeader struct {
 
 type ParsedPosixHeader struct {
 	Name     string
-	Mode     [7]byte // TBD, maybe octal string is fine
+	Mode     int
 	Uid      int
 	Gid      int
 	Size     int64 // NOTE: 8^12 = 2^36 > size of int (32 bits)
@@ -89,12 +89,17 @@ func BuildRawHeader(raw_input []byte) (*PosixHeader, error) {
 func (r *PosixHeader) Parse() (*ParsedPosixHeader, error) {
 	res := ParsedPosixHeader{
 		Name:     string(r.Name[:99]),
-		Mode:     [7]byte(r.Mode[:7]),
 		Typeflag: typeFlag(r.Typeflag),
 		Linkname: string(r.Linkname[:99]),
 		Padding:  r.Padding,
 	}
 	// Processed fields (octal base conversion)
+	// Mode
+	mode, err := utils.Base8ToBase10(r.Mode[4:7]) // TODO: find what to do with first bytes
+	if err != nil {
+		return nil, fmt.Errorf("cloud not parse octal value for header section mode: %v", err)
+	}
+	res.Mode = int(mode)
 	// Uid
 	uid, err := utils.Base8ToBase10(r.Uid[:7])
 	if err != nil {
@@ -132,7 +137,7 @@ func (r *PosixHeader) Parse() (*ParsedPosixHeader, error) {
 // Prints the content of the parsed POSIX header h in a human-friendly way
 func (h ParsedPosixHeader) Print() {
 	fmt.Printf("File name: %s\n", h.Name)
-	fmt.Printf("Mode: %s\n", h.Mode[:])
+	fmt.Printf("Mode: %o\n", h.Mode)
 	fmt.Printf("Uid: %d\n", h.Uid)
 	fmt.Printf("Gid: %d\n", h.Gid)
 	fmt.Printf("Size: %d\n", h.Size)

@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"path/filepath"
 
 	"github.com/eneiss/gar/internal/tar"
 	"github.com/eneiss/gar/internal/utils"
 	"github.com/spf13/cobra"
 )
 
-var Output string
+var OutputDirPath string
 
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -24,7 +25,7 @@ For example:
 		RunE: extractRun,
 	}
 
-	cmd.Flags().StringVarP(&Output, "output", "o", "", "Output path where the archive will be extracted")
+	cmd.Flags().StringVarP(&OutputDirPath, "output-dir", "o", "", "Output directory path where the archive will be extracted")
 	cmd.Flags().BoolP("gzip", "z", false, "Uncompress the archive with gzip")
 
 	return cmd
@@ -38,10 +39,27 @@ func extractRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Open archive
 	file, err := os.ReadFile(file_path)
 	if err != nil {
 		return err
 	}
+
+	// Change directory to output path, if defined
+	if OutputDirPath != "" {
+		if err := os.Chdir(OutputDirPath); err != nil {
+			return fmt.Errorf("could not use target directory to extract files: %v", err)
+		}
+		fmt.Printf("Changed dir to specified output dir %s\n", OutputDirPath)
+	} else {
+		fmt.Printf("Extracting files in current working directory\n")
+	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	fmt.Printf("+++ CWD: %s\n", cwd)
 
 	archive_len_bytes := len(file)
 	// check that archive length is a multiple of 512
@@ -62,7 +80,7 @@ func extractRun(cmd *cobra.Command, args []string) error {
 					return fmt.Errorf("non-zero end of archive byte at index %s, invalid file", block_index_512*512+i)
 				}
 			}
-			fmt.Printf("Found end-of-archive blocks, stopping.")
+			fmt.Printf("Found end-of-archive blocks, stopping.\n")
 			break
 		}
 
@@ -80,12 +98,19 @@ func extractRun(cmd *cobra.Command, args []string) error {
 
 		block_index_512 += 1 // end header, start parsing body
 
-		// TODO: get body
 		body_size_blocks := int(math.Ceil(float64(parsed_header.Size) / 512.0))
+		body_bytes := file[block_index_512*512 : int64(block_index_512*512)+parsed_header.Size]
 
 		fmt.Printf("512-byte blocks used to store contents of %s in archive: %d\n", parsed_header.Name, body_size_blocks)
+		fmt.Printf("Raw body content: %s\n", body_bytes)
 
-		fmt.Printf("Raw body content: %s\n", file[block_index_512*512:int64(block_index_512*512)+parsed_header.Size])
+		abs_path := filepath.Join(cwd, parsed_header.Name)
+
+		// write file to system in current working directory (already chdir to target dir)
+		err = os.WriteFile(abs_path, body_bytes, os.FileMode(parsed_header.Mode))
+		if err != nil {
+			return fmt.Errorf("failed to extract file %s: %v", parsed_header.Name, err)
+		}
 
 		// stop parsing body, go to next file/end-of-archive
 		block_index_512 += body_size_blocks
