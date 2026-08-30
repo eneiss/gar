@@ -11,18 +11,18 @@ import (
 	"time"
 )
 
-type typeFlag byte
+type TypeFlag byte
 
 const (
-	RegType   typeFlag = '0' // regular file
-	ARegType  typeFlag = 0x0 // backward-compatible variant for regular file, NUL byte
-	LinkType  typeFlag = '1' // link (any type)
-	SymType   typeFlag = '2' // symlink
-	CharType  typeFlag = '3' // character special
-	BlockType typeFlag = '4' // block special
-	DirType   typeFlag = '5' // directory
-	FifoType  typeFlag = '6' // FIFO special
-	ContType  typeFlag = '7' // reserved
+	RegType   TypeFlag = '0' // regular file
+	ARegType  TypeFlag = 0x0 // backward-compatible variant for regular file, NUL byte
+	LinkType  TypeFlag = '1' // link (any type)
+	SymType   TypeFlag = '2' // symlink
+	CharType  TypeFlag = '3' // character special
+	BlockType TypeFlag = '4' // block special
+	DirType   TypeFlag = '5' // directory
+	FifoType  TypeFlag = '6' // FIFO special
+	ContType  TypeFlag = '7' // reserved
 )
 
 type PosixHeader struct {
@@ -59,7 +59,7 @@ type ParsedPosixHeader struct {
 	Size     int64 // NOTE: 8^12 = 2^36 > size of int (32 bits)
 	Mtime    int64
 	Chksum   int
-	Typeflag typeFlag
+	Typeflag TypeFlag
 	Linkname string
 	Padding  [255]byte // TBD
 }
@@ -92,7 +92,7 @@ func (r *PosixHeader) Parse() (*ParsedPosixHeader, error) {
 		// target file name, so we trim them
 		// https://github.com/golang/go/issues/24195
 		Name:     string(bytes.Trim(r.Name[:99], "\x00")),
-		Typeflag: typeFlag(r.Typeflag),
+		Typeflag: TypeFlag(r.Typeflag),
 		Linkname: string(bytes.Trim(r.Linkname[:99], "\x00")),
 		Padding:  r.Padding,
 	}

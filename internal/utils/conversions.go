@@ -18,7 +18,7 @@ func Base8ToBase10(bytes []byte) (uint64, error) {
 	for i, b := range bytes {
 
 		if b < '0' || b > '7' {
-			return 0, fmt.Errorf("invalid base 8 character: '%c'", b)
+			return 0, fmt.Errorf("invalid base 8 character: '%c' (0x%x)", b, b)
 		}
 		// bit shift shenanigans to multiply by powers of 8:
 		// multiplying by 8 means shifting bits to the left 3 times, without overflow considerations

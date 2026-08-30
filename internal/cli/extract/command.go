@@ -108,12 +108,23 @@ func extractRun(cmd *cobra.Command, args []string) error {
 		fmt.Printf("512-byte blocks used to store contents of %s in archive: %d\n", parsed_header.Name, body_size_blocks)
 		fmt.Printf("Raw body content: %s\n", body_bytes)
 
-		// TODO: test with nested archive files
+		// Handle the extraction of different file types
+		switch t := parsed_header.Typeflag; t {
+		case tar.RegType:
+			// write file to system in current working directory (already chdir to target dir)
+			if err = os.WriteFile(parsed_header.Name, body_bytes, os.FileMode(parsed_header.Mode)); err != nil {
+				return fmt.Errorf("failed to extract file %s: %v", parsed_header.Name, err)
+			}
 
-		// write file to system in current working directory (already chdir to target dir)
-		if err = os.WriteFile(parsed_header.Name, body_bytes, os.FileMode(parsed_header.Mode)); err != nil {
-			return fmt.Errorf("failed to extract file %s: %v", parsed_header.Name, err)
+		case tar.DirType:
+			if err = os.MkdirAll(parsed_header.Name, os.FileMode(parsed_header.Mode)); err != nil {
+				return fmt.Errorf("failed to create archived directory %s: %v", parsed_header.Name, err)
+			}
+
+		default:
+			return fmt.Errorf("file type not implemented: %c", t)
 		}
+
 		// set correct uid/gid
 		if err = os.Chown(parsed_header.Name, parsed_header.Uid, parsed_header.Gid); err != nil {
 			return fmt.Errorf("failed to apply uid/gid on file %s: %v", parsed_header.Name, err)
