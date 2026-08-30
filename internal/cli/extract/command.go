@@ -66,16 +66,19 @@ func extractRun(cmd *cobra.Command, args []string) error {
 	for { // loop on each 'file' inside the archive
 		fmt.Printf("--- Starting iteration on block index %d\n", block_index_512)
 
+		// If there are less than 2 512-byte blocks remaining and we still haven't found an
+		// end-of-archive marker before, the archive is invalid
+		if len(file)-block_index_512*512 < 1024 {
+			return fmt.Errorf("invalid archive file, end-of-archive marker not found before end of file")
+		}
+
 		// Check if we reached the end of the archive with 2 'empty' blocks marking the end of the archive
-		if len(file)-block_index_512*512 == 1024 {
-			// Check if all bytes are null
-			for i, b := range file[block_index_512*512 : (block_index_512+2)*512] {
-				if b != 0 {
-					return fmt.Errorf("non-zero end of archive byte at index %s, invalid file", block_index_512*512+i)
-				}
+		for _, b := range file[block_index_512*512 : (block_index_512+2)*512] {
+			if b != 0 {
+				break
 			}
-			fmt.Printf("Found end-of-archive blocks, stopping.\n")
-			break
+			fmt.Printf("Found end-of-archive marker blocks, stopping.\n")
+			return nil
 		}
 
 		// Retrieve header info
