@@ -90,6 +90,16 @@ func extractRun(cmd *cobra.Command, args []string) error {
 
 		parsed_header.Print()
 
+		// Validate header checksum
+		is_checksum_valid, err := parsed_header.ValidateChecksum(file[block_index_512*512 : (block_index_512+1)*512])
+		if err != nil {
+			return fmt.Errorf("could not validate header checksum: %v", err)
+		}
+
+		if !is_checksum_valid {
+			return fmt.Errorf("corrupted data, invalid header checksum for file at block %d", block_index_512)
+		}
+
 		block_index_512 += 1 // end header, start parsing body
 
 		body_size_blocks := int(math.Ceil(float64(parsed_header.Size) / 512.0))

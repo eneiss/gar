@@ -25,7 +25,6 @@ const (
 	ContType  typeFlag = '7' // reserved
 )
 
-// TODO: parse into usable data structures (especially for integer values?)
 type PosixHeader struct {
 	// The name, linkname, magic, uname, and gname are null-terminated character
 	// strings. All other fileds are zero-filled octal numbers in ASCII. Each
@@ -150,9 +149,31 @@ func (h ParsedPosixHeader) Print() {
 	fmt.Printf("File type: %c\n", h.Typeflag)
 }
 
-// TODO: checksum of header to check for data corruption
-// The chksum field is the ASCII representation of the octal value of the
-// simple sum of all bytes in the header block. Each 8-bit byte in the header
-// is added to an unsigned integer, initialized to zero, the precision of which
-// shall be no less than seventeen bits. When calculating the checksum, the
-// chksum field is treated as if it were all blanks. [1]
+// Computes the checksum of the raw POSIX header bytes header_bytes and
+// compares it to the checksum value in the parsed header h.
+// Returns true if the computed checksum matches h's checksum field value,
+// false otherwise. Return an error if the header bytes array isn't the right
+// length.
+// When computing the checksum, the checksum field value is assumed to be
+// blank. ([1])
+func (h ParsedPosixHeader) ValidateChecksum(header_bytes []byte) (bool, error) {
+	if len(header_bytes) != 512 {
+		return false, fmt.Errorf("invalid header length: got %d, wanted 512", len(header_bytes))
+	}
+
+	sum := 0
+	for i, b := range header_bytes {
+		if i < 148 || i >= 156 { // filter out checksum bytes in computation
+			sum += int(b)
+		} else {
+			// > When calculating the checksum, the chksum field is treated as if it were all blanks. [1]
+			// Apparently blank litterally meant ' ' (SP character, 0x20)
+			// https://github.com/gitGNU/gnu_tar/blob/da8d0659a6fe8faf76b3a3275cf1f403e78edb1f/src/list.c#L370
+			sum += ' '
+		}
+	}
+
+	fmt.Printf("Computed checksum (base 10): %d, header checksum field value: %d\n", sum, h.Chksum)
+
+	return h.Chksum == sum, nil
+}
